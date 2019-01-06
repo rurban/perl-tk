@@ -4,16 +4,28 @@ branches:
 skip_tags: true
 shallow_clone: true
 
-cache:
-  - C:\strawberry
+#cache:
+#  - C:\strawberry
+
+environment:
+  matrix:
+    - perl: activeperl
+      make: dmake
+    - perl: strawberryperl
+      make: gmake
 
 install:
+  # Yes: install strawberry also for activeperl builds, see below
   - if not exist "C:\strawberry" cinst strawberryperl
-  - set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+  - if %perl%==strawberryperl   set PATH=C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+  - if %perl%==activeperl       ppm install MinGW dmake
+  # See http://community.activestate.com/node/10487
+#  - if %perl%==activeperl       for %%i in ( strip.exe windres.exe) do ( copy C:\strawberry\c\bin\%%i c:\perl\site\bin\ )
+  - if %perl%==activeperl       for %%i in (windres.exe ranlib.exe dllwrap.exe) do ( copy C:\strawberry\c\bin\%%i c:\perl\site\bin\ )
   - cd C:\projects\%APPVEYOR_PROJECT_NAME%
-  - cpanm --installdeps .
+  - if %perl%==strawberryperl   cpanm --installdeps .
 
 build_script:
   - perl Makefile.PL
   - set HARNESS_TIMER=1
-  - gmake test
+  - '%make% test'
